@@ -1,13 +1,5 @@
-import {
-  Socket as NetSocket,
-  Server as NetServer,
-  createServer as createNetServer,
-} from "net";
-import {
-  TLSSocket,
-  Server as TLSServer,
-  createServer as createTLSServer,
-} from "tls";
+import { Socket as NetSocket, Server as NetServer, createServer as createNetServer, connect as netConnect } from "net";
+import { TLSSocket, Server as TLSServer, createServer as createTLSServer, connect as tlsConnect } from "tls";
 
 import { Command } from "./command";
 
@@ -108,19 +100,14 @@ export interface ConnectionErrorEvent {
   error: any;
 }
 
-type ConnectionEvent =
-  | ConnectionCommandEvent
-  | ConnectionDataEvent
-  | ConnectionErrorEvent;
+type ConnectionEvent = ConnectionCommandEvent | ConnectionDataEvent | ConnectionErrorEvent;
 
-type ConnectionPushResolver = (
-  value: ConnectionEvent | PromiseLike<ConnectionEvent>
-) => void;
+type ConnectionPushResolver = (value: ConnectionEvent | PromiseLike<ConnectionEvent>) => void;
 
 export class TelnetConnection {
   public static readonly EOL = "\r\n";
-
   public static readonly DEFAULT_ENCODING = "utf8";
+
   pullList: ConnectionEvent[] = [];
   pushList: ConnectionPushResolver[] = [];
   connected = true;
@@ -162,6 +149,10 @@ export class TelnetConnection {
         data: buffer.toString(TelnetConnection.DEFAULT_ENCODING, 0, copied),
       });
     });
+
+    this.socket.on("end", () => {
+      this.connected = false;
+    });
   }
 
   private getNextEvent() {
@@ -176,7 +167,7 @@ export class TelnetConnection {
   }
 
   async *receive() {
-    while (true) {
+    while (this.connected) {
       let result = await this.getNextEvent();
       yield result;
     }
@@ -229,5 +220,22 @@ export class TelnetConnection {
     this.pullList.push({ type: "command", command: telnetCommand });
 
     return position;
+  }
+}
+
+export class TelnetClient {
+  connection?: TelnetConnection;
+  constructor(private host: string, private port: number, private tls?: boolean) {}
+
+  connect() {
+    let socket: NetSocket | TLSSocket;
+    if (this.tls) {
+      socket = tlsConnect({ host: this.host, port: this.port });
+    } else {
+      socket = netConnect({ host: this.host, port: this.port });
+    }
+
+    this.connection = new TelnetConnection(socket);
+    return this.connection;
   }
 }
