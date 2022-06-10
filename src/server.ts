@@ -15,7 +15,7 @@ type PushResolver = (value: ServerEvent | PromiseLike<ServerEvent>) => void;
 
 export interface ServerConnectEvent {
   type: "connect";
-  socket: NetSocket | TLSSocket;
+  socket: TelnetConnection;
 }
 
 export interface ServerDisconnectEvent {
@@ -53,14 +53,15 @@ export class TelnetServer {
   async *listen() {
     const connectionHandler = (conn: NetSocket | TLSSocket) => {
       console.log("Received a connection:");
+      const connection = new TelnetConnection(conn);
       if (this.pushList.length > 0) {
         const resolve = this.pushList.shift();
         if (resolve) {
           console.log("Resolving event");
-          resolve({ type: "connect", socket: conn });
+          resolve({ type: "connect", socket: connection });
         }
       } else {
-        this.pullList.push({ type: "connect", socket: conn });
+        this.pullList.push({ type: "connect", socket: connection });
       }
     };
 
@@ -125,8 +126,23 @@ export class TelnetConnection {
   connected = true;
 
   constructor(private socket: NetSocket | TLSSocket) {
+    this.initialize();
+  }
+
+  private processEvent(event: ConnectionEvent) {
+    if (this.pushList.length > 0) {
+      const resolve = this.pushList.shift();
+      if (resolve) {
+        resolve(event);
+      }
+    } else {
+      this.pullList.push(event);
+    }
+  }
+
+  private initialize() {
     this.socket.on("error", (error: any) => {
-      this.pullList.push({ type: "error", error });
+      this.processEvent({ type: "error", error });
       console.error(error);
     });
 
@@ -141,7 +157,7 @@ export class TelnetConnection {
         }
       }
 
-      this.pullList.push({
+      this.processEvent({
         type: "data",
         data: buffer.toString(TelnetConnection.DEFAULT_ENCODING, 0, copied),
       });
