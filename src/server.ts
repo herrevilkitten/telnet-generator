@@ -1,5 +1,11 @@
-import { Socket as NetSocket, Server as NetServer, createServer as createNetServer } from "net";
-import { TLSSocket, Server as TLSServer, createServer as createTLSServer } from "tls";
+import {
+  Socket as NetSocket,
+  Server as NetServer,
+  createServer as createNetServer,
+  ServerOpts,
+  ListenOptions,
+} from "net";
+import { TLSSocket, Server as TLSServer, createServer as createTLSServer, TlsOptions } from "tls";
 
 import { TelnetConnection } from "./connection";
 
@@ -15,6 +21,10 @@ export interface ServerDisconnectEvent {
 }
 
 export type ServerEvent = ServerConnectEvent | ServerDisconnectEvent;
+
+export type NetServerOptions = ServerOpts & ListenOptions;
+
+export type TLSServerOptions = TlsOptions & ListenOptions;
 
 export class TelnetServer {
   port: number;
@@ -59,7 +69,7 @@ export class TelnetServer {
       this.server = createNetServer({}, connectionHandler);
     }
 
-    await new Promise<any>((resolve) =>
+    await new Promise<NetServer | TLSServer | undefined>((resolve) =>
       this.server?.listen(this.port, () => {
         resolve(this.server);
       })

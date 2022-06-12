@@ -1,6 +1,7 @@
 import { Socket as NetSocket, Server as NetServer, createServer as createNetServer, connect as netConnect } from "net";
 import { TLSSocket, Server as TLSServer, createServer as createTLSServer, connect as tlsConnect } from "tls";
 import { Command } from "./command";
+import { EventResolver } from "./event-resolver";
 
 export interface ConnectionCommandEvent {
   type: "command";
@@ -29,8 +30,8 @@ export class TelnetConnection {
   public static readonly EOL = "\r\n";
   public static readonly DEFAULT_ENCODING = "utf8";
 
-  private pullList: ConnectionEvent[] = [];
-  private pushList: ConnectionPushResolver[] = [];
+  private resolver = new EventResolver<ConnectionEvent>();
+
   private connected = true;
 
   constructor(public readonly socket: NetSocket | TLSSocket) {

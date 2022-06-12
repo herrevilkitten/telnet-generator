@@ -1,17 +1,19 @@
-import { Socket as NetSocket, Server as NetServer, createServer as createNetServer, connect as netConnect } from "net";
-import { TLSSocket, Server as TLSServer, createServer as createTLSServer, connect as tlsConnect } from "tls";
+import { Socket as NetSocket, connect as netConnect, NetConnectOpts } from "net";
+import { TLSSocket, connect as tlsConnect, ConnectionOptions } from "tls";
 import { TelnetConnection } from "./connection";
 
 export class TelnetClient {
   connection?: TelnetConnection;
   constructor(private host: string, private port: number, private tls?: boolean) {}
 
-  connect() {
+  connect(options: ConnectionOptions | NetConnectOpts) {
     let socket: NetSocket | TLSSocket;
-    if (this.tls) {
-      socket = tlsConnect({ host: this.host, port: this.port });
+    if ("secureContext" in options) {
+      socket = tlsConnect(options);
+    } else if ("family" in options) {
+      socket = netConnect(options);
     } else {
-      socket = netConnect({ host: this.host, port: this.port });
+      throw new Error("")
     }
 
     this.connection = new TelnetConnection(socket);
