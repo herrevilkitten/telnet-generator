@@ -15,16 +15,43 @@ export interface ConnectionDataEvent {
 
 export interface ConnectionErrorEvent {
   type: "error";
-  error: any;
+  error: Error | string;
 }
 
 export interface ConnectionEndEvent {
   type: "end";
+  error?: boolean;
 }
 
-type ConnectionEvent = ConnectionCommandEvent | ConnectionDataEvent | ConnectionErrorEvent | ConnectionEndEvent;
+export interface ConnectionDrainEvent {
+  type: "drain";
+}
 
-type ConnectionPushResolver = (value: ConnectionEvent | PromiseLike<ConnectionEvent>) => void;
+export interface ConnectionLookupEvent {
+  type: "lookup";
+  error: Error | null;
+  address: string;
+  family?: string | number;
+  host: string;
+}
+
+export interface ConnectionReadyEvent {
+  type: "ready";
+}
+
+export interface ConnectionTimeoutEvent {
+  type: "timeout";
+}
+
+type ConnectionEvent =
+  | ConnectionCommandEvent
+  | ConnectionDataEvent
+  | ConnectionErrorEvent
+  | ConnectionEndEvent
+  | ConnectionDrainEvent
+  | ConnectionLookupEvent
+  | ConnectionReadyEvent
+  | ConnectionTimeoutEvent;
 
 export class TelnetConnection {
   public static readonly EOL = "\r\n";
@@ -35,24 +62,29 @@ export class TelnetConnection {
   private connected = true;
 
   constructor(public readonly socket: NetSocket | TLSSocket) {
-    this.initialize();
-  }
+    this.socket.on("close", (hasError) => {
+      this.resolver.add({ type: "end", error: hasError });
+    });
 
-  private processEvent(event: ConnectionEvent) {
-    if (this.pushList.length > 0) {
-      const resolve = this.pushList.shift();
-      if (resolve) {
-        resolve(event);
-      }
-    } else {
-      this.pullList.push(event);
-    }
-  }
-
-  private initialize() {
-    this.socket.on("error", (error: any) => {
-      this.processEvent({ type: "error", error });
+    this.socket.on("error", (error: Error) => {
+      this.resolver.add({ type: "error", error });
       console.error(error);
+    });
+
+    this.socket.on("drain", () => {
+      this.resolver.add({ type: "drain" });
+    });
+
+    this.socket.on("lookup", (error: Error | null, address: string, family: string | number, host: string) => {
+      this.resolver.add({ type: "lookup", error, address, family, host });
+    });
+
+    this.socket.on("ready", () => {
+      this.resolver.add({ type: "ready" });
+    });
+
+    this.socket.on("timeout", () => {
+      this.resolver.add({ type: "timeout" });
     });
 
     this.socket.on("data", (data: number[]) => {
@@ -66,38 +98,27 @@ export class TelnetConnection {
         }
       }
 
-      this.processEvent({
+      this.resolver.add({
         type: "data",
         data: buffer.toString(TelnetConnection.DEFAULT_ENCODING, 0, copied),
       });
     });
 
     this.socket.on("end", () => {
-      this.processEvent({ type: "end" });
+      this.resolver.add({ type: "end" });
       this.connected = false;
-    });
-  }
-
-  private getNextEvent() {
-    return new Promise<ConnectionEvent>((resolve) => {
-      const event = this.pullList.shift();
-      if (event) {
-        resolve(event);
-      } else {
-        this.pushList.push(resolve);
-      }
     });
   }
 
   async *receive() {
     while (this.connected) {
-      let result = await this.getNextEvent();
+      let result = await this.resolver.next();
       yield result;
     }
     return;
   }
 
-  public send(data: string) {
+  public send(data: string | Uint8Array) {
     if (!this.socket) {
       return;
     }
@@ -110,9 +131,16 @@ export class TelnetConnection {
     this.send(TelnetConnection.EOL);
   }
 
+  public sendCommand(data: Command[]) {
+    if (data[0] !== Command.IAC) {
+      data.unshift(Command.IAC);
+    }
+    this.send(Uint8Array.from(data));
+  }
+
   /**
    * Processes in-band telnet commands.  Please see the relevant RFCs for more information.
-   * Commands are published to the connetion observable as {@link Event.Command} and
+   * Commands are emited as ConnectionCommandEvents and
    * can be responded to by filtering for this information.
    *
    * @param data the array of data for the current input
@@ -140,7 +168,8 @@ export class TelnetConnection {
         telnetCommand.push(data[position++]);
       }
     }
-    this.pullList.push({ type: "command", command: telnetCommand });
+
+    this.resolver.add({ type: "command", command: telnetCommand });
 
     return position;
   }

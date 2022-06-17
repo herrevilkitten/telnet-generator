@@ -12,7 +12,7 @@ async function echo(conn: TelnetConnection) {
 }
 
 (async () => {
-  const server = new TelnetServer(9999);
+  const server = new TelnetServer({ port: 9999 });
 
   console.log("Starting echo server");
   for await (const event of server.listen()) {

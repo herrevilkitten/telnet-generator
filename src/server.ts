@@ -8,81 +8,85 @@ import {
 import { TLSSocket, Server as TLSServer, createServer as createTLSServer, TlsOptions } from "tls";
 
 import { TelnetConnection } from "./connection";
+import { EventResolver } from "./event-resolver";
 
-type PushResolver = (value: ServerEvent | PromiseLike<ServerEvent>) => void;
+export interface ServerStartEvent {
+  type: "start";
+  server: NetServer | TLSServer | undefined;
+}
 
 export interface ServerConnectEvent {
   type: "connect";
   connection: TelnetConnection;
 }
 
-export interface ServerDisconnectEvent {
-  type: "disconnect";
+export interface ServerStopEvent {
+  type: "stop";
 }
 
-export type ServerEvent = ServerConnectEvent | ServerDisconnectEvent;
+export interface ServerErrorEvent {
+  type: "error";
+  error: Error | string;
+}
+
+export type ServerEvent = ServerStartEvent | ServerConnectEvent | ServerStopEvent | ServerErrorEvent;
 
 export type NetServerOptions = ServerOpts & ListenOptions;
 
 export type TLSServerOptions = TlsOptions & ListenOptions;
 
-export class TelnetServer {
-  port: number;
-  tls = false;
-  pullList: ServerEvent[] = [];
-  pushList: PushResolver[] = [];
-  connected = true;
-  server?: NetServer | TLSServer;
+abstract class AbstractTelnetServer {
+  protected resolver = new EventResolver<ServerEvent>();
+  protected connected = true;
+  protected abstract server: NetServer | TLSServer;
 
-  constructor(port: number, tls?: boolean) {
-    this.port = port;
-    this.tls = !!tls;
-  }
-
-  private getNextEvent() {
-    return new Promise<ServerEvent>((resolve) => {
-      const event = this.pullList.shift();
-      if (event) {
-        resolve(event);
-      } else {
-        this.pushList.push(resolve);
-      }
-    });
-  }
+  protected constructor(protected options: NetServerOptions | TLSServerOptions) {}
 
   async *listen() {
-    const connectionHandler = (conn: NetSocket | TLSSocket) => {
-      const connection = new TelnetConnection(conn);
-      if (this.pushList.length > 0) {
-        const resolve = this.pushList.shift();
-        if (resolve) {
-          resolve({ type: "connect", connection: connection });
-        }
-      } else {
-        this.pullList.push({ type: "connect", connection: connection });
-      }
-    };
-
-    if (this.tls) {
-      this.server = createTLSServer({}, connectionHandler);
-    } else {
-      this.server = createNetServer({}, connectionHandler);
-    }
-
     await new Promise<NetServer | TLSServer | undefined>((resolve) =>
-      this.server?.listen(this.port, () => {
+      this.server.listen(this.options, () => {
+        this.resolver.add({ type: "start", server: this.server });
         resolve(this.server);
       })
     );
 
     while (this.connected) {
-      let result = await this.getNextEvent();
+      let result = await this.resolver.next();
       yield result;
     }
     return;
   }
 
-  disconnect() {
+  connectionHandler(socket: NetSocket | TLSSocket) {
+    const connection = new TelnetConnection(socket);
+    this.resolver.add({ type: "connect", connection: connection });
+  }
+
+  stop() {
     this.connected = false;
+    this.resolver.add({ type: "stop" });
+  }
+}
+
+export class TelnetServer extends AbstractTelnetServer {
+  override server: NetServer;
+
+  constructor(options: NetServerOptions) {
+    super(options);
+
+    this.server = createNetServer(options, this.connectionHandler.bind(this));
+    this.server.on("error", (error) => {
+      this.resolver.add({ type: "error", error });
+    });
+  }
+}
+
+export class TLSTelnetServer extends AbstractTelnetServer {
+  override server: TLSServer;
+
+  constructor(options: TLSServerOptions) {
+    super(options);
+
+    this.server = createTLSServer(options, this.connectionHandler.bind(this));
   }
 }
