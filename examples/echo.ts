@@ -1,4 +1,4 @@
-import { TelnetServer, TelnetConnection } from "../index";
+import { TelnetServer, TelnetConnection } from "../src/index";
 
 async function echo(conn: TelnetConnection) {
   const remote = `${conn.socket.remoteAddress}:${conn.socket.remotePort || "*"}`;
