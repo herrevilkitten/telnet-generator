@@ -7,7 +7,9 @@
     "build": "tsc",
     "clean": "rimraf dist",
     "test": "jasmine --config=jasmine.json",
-    "example:echo": "ts-node examples/echo"
+    "example:echo": "ts-node examples/echo",
+    "example:daytime": "ts-node examples/daytime",
+    "example:chargen": "ts-node examples/chargen"
   },
   "keywords": [],
   "author": "",

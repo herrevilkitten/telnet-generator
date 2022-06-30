@@ -119,7 +119,7 @@ export class TelnetConnection {
   }
 
   public send(data: string | Uint8Array) {
-    if (!this.socket) {
+    if (!this.socket || !this.socket.writable) {
       return;
     }
 
@@ -136,6 +136,10 @@ export class TelnetConnection {
       data.unshift(Command.IAC);
     }
     this.send(Uint8Array.from(data));
+  }
+
+  public disconnect() {
+    this.socket.end();
   }
 
   /**
@@ -172,5 +176,9 @@ export class TelnetConnection {
     this.resolver.add({ type: "command", command: telnetCommand });
 
     return position;
+  }
+
+  name() {
+    return `${this.socket.remoteAddress}:${this.socket.remotePort || "*"}`;
   }
 }
