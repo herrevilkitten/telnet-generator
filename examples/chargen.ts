@@ -8,18 +8,18 @@ async function chargen(conn: TelnetConnection) {
   let running = true;
   let index = 0;
 
-  function sendPattern(conn: TelnetConnection) {
+  function sendPattern() {
     conn.send(PATTERN[index]);
     index = (index + 1) % PATTERN.length;
     if (running) {
       setTimeout(() => {
-        sendPattern(conn);
+        sendPattern();
       });
     }
   }
 
   setTimeout(() => {
-    sendPattern(conn);
+    sendPattern();
   });
 
   for await (const event of conn.receive()) {

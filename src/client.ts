@@ -1,22 +1,43 @@
-import { Socket as NetSocket, connect as netConnect, NetConnectOpts } from "net";
-import { TLSSocket, connect as tlsConnect, ConnectionOptions } from "tls";
+import { Socket as NetSocket, connect as netConnect, NetConnectOpts as NetOptions } from "net";
+import { TLSSocket, connect as tlsConnect, ConnectionOptions as TLSOptions } from "tls";
 import { TelnetConnection } from "./connection";
 
-export class TelnetClient {
+abstract class AbstractTelnetClient {
   connection?: TelnetConnection;
-  constructor(private host: string, private port: number, private tls?: boolean) {}
+  protected abstract options: NetOptions | TLSOptions;
 
-  connect(options: ConnectionOptions | NetConnectOpts) {
-    let socket: NetSocket | TLSSocket;
-    if ("secureContext" in options) {
-      socket = tlsConnect(options);
-    } else if ("family" in options) {
-      socket = netConnect(options);
-    } else {
-      throw new Error("")
-    }
+  cosntructor() {}
 
+  protected connect(socket: NetSocket | TLSSocket) {
     this.connection = new TelnetConnection(socket);
     return this.connection;
+  }
+}
+
+export class TelnetClient extends AbstractTelnetClient {
+  override options: NetOptions;
+
+  constructor(options: NetOptions) {
+    super();
+
+    this.options = options;
+  }
+
+  connect() {
+    return super.connect(netConnect(this.options));
+  }
+}
+
+export class TLSTelnetClient extends AbstractTelnetClient {
+  override options: TLSOptions;
+
+  constructor(options: TLSOptions) {
+    super();
+
+    this.options = options;
+  }
+
+  connect() {
+    return super.connect(tlsConnect(this.options));
   }
 }
