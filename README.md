@@ -8,3 +8,6 @@ A small library for telnet clients and servers built with asynchronous generator
 
 ## SYNOPSIS
 
+## EXAMPLES
+
+Check the [examples](./examples) directory for some examples on different telnet clients and servers.

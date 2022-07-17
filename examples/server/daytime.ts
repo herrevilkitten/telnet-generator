@@ -1,4 +1,4 @@
-import { TelnetServer, TelnetConnection } from "../src/index";
+import { TelnetServer, TelnetConnection } from "../../src/index";
 
 async function daytime(conn: TelnetConnection) {
   const remote = conn.name();

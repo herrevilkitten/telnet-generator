@@ -1,4 +1,4 @@
-import { TelnetServer, TelnetConnection } from "../src/index";
+import { TelnetServer, TelnetConnection } from "../../src/index";
 
 const PATTERN = ` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_\`abcdefghijklmnopqrstuvwxyz{|}`;
 

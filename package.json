@@ -2,14 +2,17 @@
   "name": "telnet-generator",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
     "test": "jasmine --config=jasmine.json",
-    "example:echo": "ts-node examples/echo",
-    "example:daytime": "ts-node examples/daytime",
-    "example:chargen": "ts-node examples/chargen"
+    "example:server:echo": "ts-node examples/server/echo",
+    "example:server:daytime": "ts-node examples/server/daytime",
+    "example:server:chargen": "ts-node examples/server/chargen",
+    "example:client:daytime": "ts-node examples/client/daytime",
+    "example:client:http": "ts-node examples/client/http",
+    "example:client:https": "ts-node examples/client/https"
   },
   "keywords": [],
   "author": "",
