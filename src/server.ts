@@ -159,5 +159,8 @@ export class TLSTelnetServer extends AbstractTelnetServer {
     super(options);
 
     this.server = createTLSServer(options, this.connectionHandler.bind(this));
+    this.server.on('error', (error) => {
+      this.resolver.add({ type: 'error', error });
+    });
   }
 }
