@@ -246,6 +246,7 @@ export class TelnetConnection {
       while (position < data.length) {
         telnetCommand.push(data[position++]);
         if (data[position] === Command.SE) {
+          telnetCommand.push(data[position]);
           break;
         }
       }
@@ -254,7 +255,7 @@ export class TelnetConnection {
         telnetCommand.push(data[position++]);
       }
       if (position < data.length) {
-        telnetCommand.push(data[position++]);
+        telnetCommand.push(data[position]);
       }
     }
 
