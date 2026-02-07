@@ -14,7 +14,7 @@ async function echo(conn: TelnetConnection) {
 (async () => {
   const server = new TelnetServer({ port: 9999 });
 
-  console.log("Starting echo server");
+  console.log("Starting echo server on port 9999");
   for await (const event of server.listen()) {
     if (event.type === "connect") {
       echo(event.connection);

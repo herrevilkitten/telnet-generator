@@ -35,7 +35,7 @@ async function chargen(conn: TelnetConnection) {
 (async () => {
   const server = new TelnetServer({ port: 9999 });
 
-  console.log("Starting chargen server");
+  console.log("Starting chargen server on port 9999");
   for await (const event of server.listen()) {
     if (event.type === "connect") {
       chargen(event.connection);

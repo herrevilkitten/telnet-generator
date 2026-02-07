@@ -11,7 +11,7 @@ async function daytime(conn: TelnetConnection) {
 (async () => {
   const server = new TelnetServer({ port: 9999 });
 
-  console.log("Starting daytime server");
+  console.log("Starting daytime server on port 9999");
   for await (const event of server.listen()) {
     if (event.type === "connect") {
       daytime(event.connection);
