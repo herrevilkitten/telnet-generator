@@ -2,6 +2,8 @@
 
 A small, modern library for creating Telnet clients and servers using asynchronous generators, providing a clean and intuitive way to handle Telnet connections.
 
+[![npm version](https://badge.fury.io/js/@herrevilkitten%2Ftelnet.svg)](https://badge.fury.io/js/@herrevilkitten%2Ftelnet)
+
 ## Features
 
 - **Asynchronous by Design**: Built with async generators for handling events, eliminating the need for complex callback structures.
@@ -12,27 +14,39 @@ A small, modern library for creating Telnet clients and servers using asynchrono
 
 ## Installation
 
-You can install `@herrevilkitten/telnet` using your favorite package manager.
+You can install the package using your favorite package manager.
 
-### PNPM
+**pnpm:**
 
 ```bash
 pnpm add @herrevilkitten/telnet
 ```
 
-### NPM
+**npm:**
 
 ```bash
 npm install @herrevilkitten/telnet
 ```
 
-### Yarn
+**yarn:**
 
 ```bash
 yarn add @herrevilkitten/telnet
 ```
 
-## Synopsis
+## Usage
+
+### ESM (import)
+
+```typescript
+import { TelnetConnection, TelnetServer } from '@herrevilkitten/telnet';
+```
+
+### CommonJS (require)
+
+```javascript
+const { Telnet } = require('@herrevilkitten/telnet');
+```
 
 ### Telnet Server
 
@@ -157,3 +171,7 @@ Check the [examples](./examples) directory for more detailed examples of differe
 ## See Also
 
 - [telnet-rxjs](https://www.npmjs.com/package/telnet-rxjs) - A similar library that uses RxJS for handling Telnet events.
+
+## License
+
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](./LICENSE) file for more details.
