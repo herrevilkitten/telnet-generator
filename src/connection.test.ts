@@ -1,5 +1,4 @@
 import { Socket as NetSocket } from 'net';
-import { TLSSocket } from 'tls';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from './command';
@@ -126,6 +125,23 @@ describe('TelnetConnection', () => {
 
   it('should return the connection name', () => {
     connection = new TelnetConnection(mockSocket);
-    expect(connection.name()).toBe('127.0.0.1:12345');
+    expect(connection.name).toBe('Connection<127.0.0.1:12345>');
+  });
+
+  it('should return the connection address', () => {
+    connection = new TelnetConnection(mockSocket);
+    vi.spyOn(mockSocket, 'remoteFamily', 'get').mockReturnValue('IPv4');
+    expect(connection.address).toEqual({
+      ip: '127.0.0.1',
+      port: 12345,
+      family: 'IPv4',
+    });
+  });
+
+  it('should return null address if remoteAddress is not available', () => {
+    vi.spyOn(mockSocket, 'remoteAddress', 'get').mockReturnValue(undefined);
+    connection = new TelnetConnection(mockSocket);
+    expect(connection.address).toBeNull();
+    expect(connection.name).toBe('Connection<*:*>');
   });
 });

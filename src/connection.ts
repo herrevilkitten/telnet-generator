@@ -264,11 +264,23 @@ export class TelnetConnection {
     return position;
   }
 
+  get address() {
+    if (!this.socket.remoteAddress) {
+      return null;
+    }
+    return {
+      ip: this.socket.remoteAddress,
+      port: this.socket.remotePort || 0,
+      family: this.socket.remoteFamily,
+    };
+  }
+
   /**
    * Returns the name of the connection.
    * @returns The name of the connection.
    */
-  name() {
-    return `${this.socket.remoteAddress}:${this.socket.remotePort || '*'}`;
+  get name() {
+    const address = this.address;
+    return `Connection<${address?.ip || '*'}:${address?.port || '*'}>`;
   }
 }

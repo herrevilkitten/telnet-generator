@@ -121,6 +121,21 @@ abstract class AbstractTelnetServer {
     this.connected = false;
     this.resolver.add({ type: 'stop' });
   }
+
+  get address() {
+    const address = this.server.address();
+    if (address && typeof address !== 'string') {
+      return { ip: address.address, port: address.port, family: address.family };
+    } else if (typeof address === 'string') {
+      return { ip: address, port: 0, family: 'N/A' };
+    }
+    return null;
+  }
+
+  get name() {
+    const type = this.server instanceof TLSServer ? 'TLSTelnetServer' : 'TelnetServer';
+    return `${type}<${this.address?.ip || '*'}:${this.address?.port || '*'}>`;
+  }
 }
 
 /**
