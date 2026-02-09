@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Command } from './command';
 import { TelnetConnection } from './connection';
 
+// A mock implementation of the net.Socket class for testing purposes.
 class MockSocket extends NetSocket {
   constructor() {
     super();
+    // Mock the event listener methods to avoid actual event handling.
     this.on = vi.fn();
     this.write = vi.fn();
     this.end = vi.fn();
@@ -19,6 +21,7 @@ describe('TelnetConnection', () => {
 
   beforeEach(() => {
     mockSocket = new MockSocket();
+    // Mock the remoteAddress and remotePort properties to simulate a real connection.
     vi.spyOn(mockSocket, 'remoteAddress', 'get').mockReturnValue('127.0.0.1');
     vi.spyOn(mockSocket, 'remotePort', 'get').mockReturnValue(12345);
     vi.clearAllMocks();
@@ -36,6 +39,7 @@ describe('TelnetConnection', () => {
 
   it('should register all event listeners on the socket', () => {
     connection = new TelnetConnection(mockSocket);
+    // Verify that all the necessary event listeners are registered on the socket.
     expect(mockSocket.on).toHaveBeenCalledWith('close', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('error', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('drain', expect.any(Function));
@@ -48,8 +52,10 @@ describe('TelnetConnection', () => {
 
   it('should handle "data" event and parse telnet commands', async () => {
     connection = new TelnetConnection(mockSocket);
+    // Get the data handler function from the mock socket.
     const dataHandler = (mockSocket.on as vi.Mock).mock.calls.find((call) => call[0] === 'data')[1];
 
+    // Simulate receiving data with an embedded Telnet command.
     const data = [
       ...Buffer.from('hello'),
       Command.IAC,
@@ -60,11 +66,13 @@ describe('TelnetConnection', () => {
     dataHandler(data);
 
     const receiveIterator = connection.receive();
+    // Verify that the Telnet command is parsed correctly.
     let result = await receiveIterator.next();
     expect(result.value).toEqual({
       type: 'command',
       command: [Command.IAC, Command.DO, Command.ECHO],
     });
+    // Verify that the data is extracted correctly.
     result = await receiveIterator.next();
     expect(result.value).toEqual({
       type: 'data',

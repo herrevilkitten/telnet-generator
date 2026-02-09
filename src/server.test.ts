@@ -4,9 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TLSTelnetServer, TelnetServer } from './server';
 
+// Mock the 'net' module to isolate the tests from actual network operations.
 vi.mock('net', async () => {
   const { EventEmitter } = await import('node:events');
+  // Mock the Socket class to avoid creating real sockets.
   class MockSocket extends EventEmitter {}
+  // Mock the Server class to avoid creating a real server.
   class MockServer extends EventEmitter {
     listen = vi.fn((options, callback) => {
       if (callback) {
@@ -17,14 +20,18 @@ vi.mock('net', async () => {
     close = vi.fn();
   }
   return {
+    // Mock the createServer function to return our mock server.
     createServer: vi.fn(() => new MockServer()),
     Socket: MockSocket,
   };
 });
 
+// Mock the 'tls' module to isolate the tests from actual TLS operations.
 vi.mock('tls', async () => {
   const { EventEmitter } = await import('node:events');
+  // Mock the Socket class to avoid creating real sockets.
   class MockSocket extends EventEmitter {}
+  // Mock the Server class to avoid creating a real server.
   class MockServer extends EventEmitter {
     listen = vi.fn((options, callback) => {
       if (callback) {
@@ -35,6 +42,7 @@ vi.mock('tls', async () => {
     close = vi.fn();
   }
   return {
+    // Mock the createServer function to return our mock server.
     createServer: vi.fn(() => new MockServer()),
     Socket: MockSocket,
   };
@@ -53,13 +61,16 @@ describe('TelnetServer', () => {
   });
 
   it('should create a net server', () => {
+    // Verify that the createServer function was called with the correct options.
     expect(createNetServer).toHaveBeenCalledWith(options, expect.any(Function));
   });
 
   it('should start listening and emit a start event', async () => {
     const listenPromise = server.listen().next();
     const event = await listenPromise;
+    // Verify that the listen method was called on the server.
     expect(server.server.listen).toHaveBeenCalledWith(options, expect.any(Function));
+    // Verify that a 'start' event was emitted.
     expect(event.value).toEqual({ type: 'start', server: server.server });
   });
 
@@ -74,6 +85,7 @@ describe('TelnetServer', () => {
     connectionCallback(mockSocket);
 
     const event = await connectPromise;
+    // Verify that a 'connect' event was emitted.
     expect(event.value.type).toBe('connect');
     expect(event.value.connection).toBeDefined();
   });
@@ -84,9 +96,11 @@ describe('TelnetServer', () => {
 
     const errorPromise = iterator.next();
     const error = new Error('test error');
+    // Simulate an error event on the server.
     (server.server as NetServer).emit('error', error);
 
     const event = await errorPromise;
+    // Verify that an 'error' event was emitted.
     expect(event.value).toEqual({ type: 'error', error });
   });
 
@@ -98,8 +112,10 @@ describe('TelnetServer', () => {
     server.stop();
 
     const event = await stopPromise;
+    // Verify that a 'stop' event was emitted.
     expect(event.value).toEqual({ type: 'stop' });
 
+    // Verify that the iterator is done.
     const end = await iterator.next();
     expect(end.done).toBe(true);
   });
@@ -118,13 +134,16 @@ describe('TLSTelnetServer', () => {
   });
 
   it('should create a tls server', () => {
+    // Verify that the createServer function was called with the correct options.
     expect(createTlsServer).toHaveBeenCalledWith(options, expect.any(Function));
   });
 
   it('should start listening and emit a start event', async () => {
     const listenPromise = server.listen().next();
     const event = await listenPromise;
+    // Verify that the listen method was called on the server.
     expect(server.server.listen).toHaveBeenCalledWith(options, expect.any(Function));
+    // Verify that a 'start' event was emitted.
     expect(event.value).toEqual({ type: 'start', server: server.server });
   });
 
@@ -139,6 +158,7 @@ describe('TLSTelnetServer', () => {
     connectionCallback(mockSocket);
 
     const event = await connectPromise;
+    // Verify that a 'connect' event was emitted.
     expect(event.value.type).toBe('connect');
     expect(event.value.connection).toBeDefined();
   });
@@ -149,9 +169,11 @@ describe('TLSTelnetServer', () => {
 
     const errorPromise = iterator.next();
     const error = new Error('test error');
+    // Simulate an error event on the server.
     (server.server as TlsServer).emit('error', error);
 
     const event = await errorPromise;
+    // Verify that an 'error' event was emitted.
     expect(event.value).toEqual({ type: 'error', error });
   });
 
@@ -163,8 +185,10 @@ describe('TLSTelnetServer', () => {
     server.stop();
 
     const event = await stopPromise;
+    // Verify that a 'stop' event was emitted.
     expect(event.value).toEqual({ type: 'stop' });
 
+    // Verify that the iterator is done.
     const end = await iterator.next();
     expect(end.done).toBe(true);
   });

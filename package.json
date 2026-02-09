@@ -1,6 +1,6 @@
 {
   "name": "@herrevilkitten/telnet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "type": "module",
   "main": "./dist/cjs/index.js",
@@ -55,7 +55,7 @@
     "url": "https://github.com/herrevilkitten/telnet-generator/issues"
   },
   "dependencies": {
-    "@herrevilkitten/async-queue": "link:../async-queue"
+    "@herrevilkitten/async-queue": "1.0.0"
   },
   "prettier": {
     "printWidth": 100,

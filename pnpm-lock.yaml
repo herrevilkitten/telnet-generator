@@ -4,16 +4,13 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@herrevilkitten/async-queue': link:../async-queue
-
 importers:
 
   .:
     dependencies:
       '@herrevilkitten/async-queue':
-        specifier: link:../async-queue
-        version: link:../async-queue
+        specifier: 1.0.0
+        version: 1.0.0
     devDependencies:
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^6.0.2
@@ -231,6 +228,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@herrevilkitten/async-queue@1.0.0':
+    resolution: {integrity: sha512-pKf/XbbU/5l/Tp2edaBGmQnwfIhO9n2/QGrAWZStmcC/2Roe6aZypijhdj/+2fLCZrpo/PAtGhUFrqod5dxojw==}
 
   '@isaacs/balanced-match@4.0.1':
     resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
@@ -832,6 +832,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.2':
     optional: true
+
+  '@herrevilkitten/async-queue@1.0.0': {}
 
   '@isaacs/balanced-match@4.0.1': {}
 
