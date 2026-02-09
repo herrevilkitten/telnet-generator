@@ -15,87 +15,87 @@ import {
 import { Command } from './command';
 
 /**
- * An event that represents a Telnet command.
+ * Represents an event that is emitted when a Telnet command is received.
  */
 export interface ConnectionCommandEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'command'. */
   type: 'command';
-  /** The Telnet command. */
+  /** An array of Telnet commands that were received. */
   command: Command[];
 }
 
 /**
- * An event that represents incoming data.
+ * Represents an event that is emitted when data is received from the connection.
  */
 export interface ConnectionDataEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'data'. */
   type: 'data';
-  /** The incoming data. */
+  /** The data that was received, as a string. */
   data: string;
 }
 
 /**
- * An event that represents an error.
+ * Represents an event that is emitted when an error occurs on the connection.
  */
 export interface ConnectionErrorEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'error'. */
   type: 'error';
-  /** The error. */
+  /** The error that occurred. */
   error: Error | string;
 }
 
 /**
- * An event that represents the end of the connection.
+ * Represents an event that is emitted when the connection is closed.
  */
 export interface ConnectionEndEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'end'. */
   type: 'end';
-  /** Whether the connection ended with an error. */
+  /** A flag indicating whether the connection ended with an error. */
   error?: boolean;
 }
 
 /**
- * An event that represents a drain of the socket's buffer.
+ * Represents an event that is emitted when the socket's buffer has been drained.
  */
 export interface ConnectionDrainEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'drain'. */
   type: 'drain';
 }
 
 /**
- * An event that represents a DNS lookup.
+ * Represents an event that is emitted when a DNS lookup is performed.
  */
 export interface ConnectionLookupEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'lookup'. */
   type: 'lookup';
-  /** The error, if any. */
+  /** The error that occurred during the lookup, if any. */
   error: Error | null;
-  /** The IP address. */
+  /** The IP address that was resolved. */
   address: string;
-  /** The address family. */
+  /** The address family (e.g., 'IPv4' or 'IPv6'). */
   family?: string | number;
-  /** The hostname. */
+  /** The hostname that was resolved. */
   host: string;
 }
 
 /**
- * An event that represents that the connection is ready.
+ * Represents an event that is emitted when the connection is ready.
  */
 export interface ConnectionReadyEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'ready'. */
   type: 'ready';
 }
 
 /**
- * An event that represents a timeout.
+ * Represents an event that is emitted when the connection times out.
  */
 export interface ConnectionTimeoutEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'timeout'. */
   type: 'timeout';
 }
 
 /**
- * A Telnet connection event.
+ * Represents a Telnet connection event, which can be one of several types.
  */
 type ConnectionEvent =
   | ConnectionCommandEvent
@@ -108,12 +108,12 @@ type ConnectionEvent =
   | ConnectionTimeoutEvent;
 
 /**
- * A Telnet connection.
+ * Represents a Telnet connection, which can be used to send and receive data and commands.
  */
 export class TelnetConnection {
-  /** The end-of-line sequence. */
+  /** The end-of-line sequence used in Telnet. */
   public static readonly EOL = '\r\n';
-  /** The default encoding. */
+  /** The default encoding for Telnet connections. */
   public static readonly DEFAULT_ENCODING = 'utf8';
 
   private resolver = new AsyncQueue<ConnectionEvent>();
@@ -122,7 +122,7 @@ export class TelnetConnection {
 
   /**
    * Creates a new Telnet connection.
-   * @param socket The underlying socket.
+   * @param socket The underlying `net.Socket` or `tls.TLSSocket` to use for the connection.
    */
   constructor(public readonly socket: NetSocket | TLSSocket) {
     this.socket.on('close', (hasError) => {
@@ -177,8 +177,8 @@ export class TelnetConnection {
   }
 
   /**
-   * Receives data from the connection.
-   * @returns An async iterator of connection events.
+   * Asynchronously receives data and events from the connection.
+   * @returns An async iterator that yields connection events.
    */
   async *receive() {
     while (this.connected) {
@@ -189,8 +189,8 @@ export class TelnetConnection {
   }
 
   /**
-   * Sends data to the connection.
-   * @param data The data to send.
+   * Sends data over the connection.
+   * @param data The data to send, as a string or a `Uint8Array`.
    */
   public send(data: string | Uint8Array) {
     if (!this.socket || !this.socket.writable) {
@@ -201,8 +201,8 @@ export class TelnetConnection {
   }
 
   /**
-   * Sends a line of data to the connection.
-   * @param data The data to send.
+   * Sends a line of data over the connection, followed by the EOL sequence.
+   * @param data The line of data to send.
    */
   public sendln(data: string) {
     this.send(data);
@@ -210,8 +210,8 @@ export class TelnetConnection {
   }
 
   /**
-   * Sends a Telnet command to the connection.
-   * @param data The command to send.
+   * Sends a Telnet command over the connection.
+   * @param data The command to send, as an array of numbers.
    */
   public sendCommand(data: Command[]) {
     if (data[0] !== Command.IAC) {
@@ -228,13 +228,15 @@ export class TelnetConnection {
   }
 
   /**
-   * Processes in-band telnet commands.  Please see the relevant RFCs for more information.
-   * Commands are emited as ConnectionCommandEvents and
-   * can be responded to by filtering for this information.
+   * Processes in-band Telnet commands.
    *
-   * @param data the array of data for the current input
-   * @param position the current position of the data cursor
-   * @returns the new position of the data cursor
+   * This method handles Telnet commands that are embedded in the data stream.
+   * It emits `ConnectionCommandEvent`s that can be used to respond to the commands.
+   *
+   * @param data The array of data from the current input.
+   * @param position The current position of the data cursor.
+   * @returns The new position of the data cursor.
+   * @see https://tools.ietf.org/html/rfc854
    */
   private handleTelnetCommand(data: number[], position: number) {
     const telnetCommand: number[] = [Command.IAC];
@@ -264,6 +266,9 @@ export class TelnetConnection {
     return position;
   }
 
+  /**
+   * Gets the address information for the remote end of the connection.
+   */
   get address() {
     if (!this.socket.remoteAddress) {
       return null;
@@ -276,7 +281,7 @@ export class TelnetConnection {
   }
 
   /**
-   * Returns the name of the connection.
+   * Returns the name of the connection, including the remote address and port.
    * @returns The name of the connection.
    */
   get name() {

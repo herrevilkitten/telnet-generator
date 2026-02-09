@@ -11,45 +11,45 @@ import { Server as TLSServer, TLSSocket, TlsOptions, createServer as createTLSSe
 import { TelnetConnection } from './connection';
 
 /**
- * An event that represents the start of a server.
+ * Represents an event that is emitted when a server starts.
  */
 export interface ServerStartEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'start'. */
   type: 'start';
-  /** The server instance. */
+  /** The underlying `net.Server` or `tls.TLSServer` instance. */
   server: NetServer | TLSServer | undefined;
 }
 
 /**
- * An event that represents a new connection.
+ * Represents an event that is emitted when a new client connects to the server.
  */
 export interface ServerConnectEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'connect'. */
   type: 'connect';
-  /** The new connection. */
+  /** The new Telnet connection. */
   connection: TelnetConnection;
 }
 
 /**
- * An event that represents the stop of a server.
+ * Represents an event that is emitted when a server stops.
  */
 export interface ServerStopEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'stop'. */
   type: 'stop';
 }
 
 /**
- * An event that represents an error.
+ * Represents an event that is emitted when an error occurs.
  */
 export interface ServerErrorEvent {
-  /** The type of the event. */
+  /** The type of the event, which is always 'error'. */
   type: 'error';
-  /** The error. */
+  /** The error that occurred. */
   error: Error | string;
 }
 
 /**
- * A server event.
+ * Represents a server event, which can be one of several types.
  */
 export type ServerEvent =
   | ServerStartEvent
@@ -68,15 +68,15 @@ export type NetServerOptions = ServerOpts & ListenOptions;
 export type TLSServerOptions = TlsOptions & ListenOptions;
 
 /**
- * Abstract base class for Telnet servers.
+ * Represents an abstract base class for Telnet servers.
  * @abstract
  */
 abstract class AbstractTelnetServer {
-  /** The event queue. */
+  /** The event queue for handling server events asynchronously. */
   protected resolver = new AsyncQueue<ServerEvent>();
-  /** Whether the server is connected. */
+  /** A flag indicating whether the server is currently connected and listening for connections. */
   protected connected = true;
-  /** The underlying server. */
+  /** The underlying `net.Server` or `tls.TLSServer` instance. */
   protected abstract server: NetServer | TLSServer;
 
   /**
@@ -87,8 +87,8 @@ abstract class AbstractTelnetServer {
   protected constructor(protected options: NetServerOptions | TLSServerOptions) {}
 
   /**
-   * Starts listening for connections.
-   * @returns An async iterator of server events.
+   * Starts listening for incoming connections.
+   * @returns An async iterator that yields server events.
    */
   async *listen() {
     await new Promise<NetServer | TLSServer | undefined>((resolve) =>
@@ -106,7 +106,7 @@ abstract class AbstractTelnetServer {
   }
 
   /**
-   * Handles a new connection.
+   * Handles a new incoming connection.
    * @param socket The socket for the new connection.
    */
   connectionHandler(socket: NetSocket | TLSSocket) {
@@ -115,13 +115,16 @@ abstract class AbstractTelnetServer {
   }
 
   /**
-   * Stops the server.
+   * Stops the server from accepting new connections.
    */
   stop() {
     this.connected = false;
     this.resolver.add({ type: 'stop' });
   }
 
+  /**
+   * Gets the address information for the server.
+   */
   get address() {
     const address = this.server.address();
     if (address && typeof address !== 'string') {
@@ -132,6 +135,9 @@ abstract class AbstractTelnetServer {
     return null;
   }
 
+  /**
+   * Gets the name of the server, including its type and address.
+   */
   get name() {
     const type = this.server instanceof TLSServer ? 'TLSTelnetServer' : 'TelnetServer';
     return `${type}<${this.address?.ip || '*'}:${this.address?.port || '*'}>`;
@@ -139,10 +145,10 @@ abstract class AbstractTelnetServer {
 }
 
 /**
- * A Telnet server that uses a raw TCP connection.
+ * A Telnet server that communicates over a raw TCP connection.
  */
 export class TelnetServer extends AbstractTelnetServer {
-  /** The underlying server. */
+  /** The underlying `net.Server` instance. */
   override server: NetServer;
 
   /**
@@ -160,10 +166,10 @@ export class TelnetServer extends AbstractTelnetServer {
 }
 
 /**
- * A Telnet server that uses a TLS connection.
+ * A Telnet server that communicates over a TLS-encrypted connection.
  */
 export class TLSTelnetServer extends AbstractTelnetServer {
-  /** The underlying server. */
+  /** The underlying `tls.TLSServer` instance. */
   override server: TLSServer;
 
   /**

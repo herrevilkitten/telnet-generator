@@ -4,11 +4,14 @@ import { ConnectionOptions as TLSOptions, TLSSocket, connect as tlsConnect } fro
 import { TelnetConnection } from './connection';
 
 /**
- * Abstract base class for Telnet clients.
+ * Represents an abstract base class for Telnet clients.
  * @abstract
  */
 abstract class AbstractTelnetClient {
-  /** The Telnet connection. */
+  /**
+   * The underlying Telnet connection.
+   * This is only available after a successful connection.
+   */
   connection?: TelnetConnection;
   /** The options for the connection. */
   protected abstract options: NetOptions | TLSOptions;
@@ -43,8 +46,8 @@ export class TelnetClient extends AbstractTelnetClient {
   }
 
   /**
-   * Connects to a Telnet server.
-   * @returns The Telnet connection.
+   * Establishes a connection to a Telnet server.
+   * @returns The established Telnet connection.
    */
   connect() {
     return super.connect(netConnect(this.options));
@@ -52,15 +55,15 @@ export class TelnetClient extends AbstractTelnetClient {
 }
 
 /**
- * A Telnet client that uses a TLS connection.
+ * A Telnet client that communicates over a TLS-encrypted connection.
  */
 export class TLSTelnetClient extends AbstractTelnetClient {
-  /** The options for the connection. */
+  /** The options for the TLS connection. */
   override options: TLSOptions;
 
   /**
    * Creates a new TLS Telnet client.
-   * @param options The options for the connection.
+   * @param options The options for the TLS connection.
    */
   constructor(options: TLSOptions) {
     super();
@@ -69,8 +72,8 @@ export class TLSTelnetClient extends AbstractTelnetClient {
   }
 
   /**
-   * Connects to a Telnet server using TLS.
-   * @returns The Telnet connection.
+   * Establishes a connection to a Telnet server using TLS.
+   * @returns The established Telnet connection.
    */
   connect() {
     return super.connect(tlsConnect(this.options));
